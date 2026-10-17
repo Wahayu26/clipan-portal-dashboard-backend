@@ -31,6 +31,7 @@ $router = new Router();
 // 1. HEALTH & SYSTEM STATUS
 // ==========================================
 $router->get('/api/health', [HealthController::class, 'check']);
+$router->get('/api/portal/health', [HealthController::class, 'check']);
 $router->get('/health', [HealthController::class, 'check']);
 
 // ==========================================
@@ -39,39 +40,52 @@ $router->get('/health', [HealthController::class, 'check']);
 // Login with anti brute-force rate limit protection
 $router->post('/api/login', [AuthController::class, 'login'], [RateLimitMiddleware::class]);
 $router->post('/api/auth/login', [AuthController::class, 'login'], [RateLimitMiddleware::class]);
+$router->post('/api/portal/login', [AuthController::class, 'login'], [RateLimitMiddleware::class]);
+$router->post('/api/portal/auth/login', [AuthController::class, 'login'], [RateLimitMiddleware::class]);
 
 // Logout & Terminate Session
 $router->post('/api/logout', [AuthController::class, 'logout']);
 $router->post('/api/auth/logout', [AuthController::class, 'logout']);
+$router->post('/api/portal/logout', [AuthController::class, 'logout']);
 
 // Current Authenticated User Profile
 $router->get('/api/me', [AuthController::class, 'me'], [AuthMiddleware::class]);
 $router->get('/api/auth/me', [AuthController::class, 'me'], [AuthMiddleware::class]);
+$router->get('/api/portal/me', [AuthController::class, 'me'], [AuthMiddleware::class]);
 
 // Fast session validation check for frontend background timer
 $router->get('/api/verify-session', [AuthController::class, 'verifySession'], [AuthMiddleware::class]);
 $router->get('/api/auth/verify', [AuthController::class, 'verifySession'], [AuthMiddleware::class]);
+$router->get('/api/portal/verify-session', [AuthController::class, 'verifySession'], [AuthMiddleware::class]);
 
 // ==========================================
 // 3. APPLICATIONS REGISTRY & LAUNCH COUNTER
 // ==========================================
 // List all applications
 $router->get('/api/apps', [AppController::class, 'index']);
+$router->get('/api/portal/apps', [AppController::class, 'index']);
 
 // Add new custom application
 $router->post('/api/apps', [AppController::class, 'store'], [AuthMiddleware::class]);
+$router->post('/api/portal/apps', [AppController::class, 'store'], [AuthMiddleware::class]);
 
 // Toggle Favorite Pin
 $router->post('/api/apps/:id/favorite', [AppController::class, 'toggleFavorite']);
 $router->post('/api/apps/{id}/favorite', [AppController::class, 'toggleFavorite']);
+$router->post('/api/portal/apps/:id/favorite', [AppController::class, 'toggleFavorite']);
+$router->post('/api/portal/apps/{id}/favorite', [AppController::class, 'toggleFavorite']);
 
 // Launch telemetry counter & timestamp updater
 $router->post('/api/apps/:id/launch', [AppController::class, 'launch']);
 $router->post('/api/apps/{id}/launch', [AppController::class, 'launch']);
+$router->post('/api/portal/apps/:id/launch', [AppController::class, 'launch']);
+$router->post('/api/portal/apps/{id}/launch', [AppController::class, 'launch']);
 
 // Delete custom application
 $router->delete('/api/apps/:id', [AppController::class, 'delete'], [AuthMiddleware::class]);
 $router->delete('/api/apps/{id}', [AppController::class, 'delete'], [AuthMiddleware::class]);
+$router->delete('/api/portal/apps/:id', [AppController::class, 'delete'], [AuthMiddleware::class]);
+$router->delete('/api/portal/apps/{id}', [AppController::class, 'delete'], [AuthMiddleware::class]);
 
 // ==========================================
 // 4. ACTIVITY LOGS & AUDIT
