@@ -1,0 +1,15 @@
+services:
+  portal-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clipan-portal-backend
+    restart: unless-stopped
+    ports:
+      - "8091:80"
+    env_file:
+      - .env
+    volumes:
+      - .:/var/www/html
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
