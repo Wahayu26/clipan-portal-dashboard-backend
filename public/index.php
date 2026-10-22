@@ -65,9 +65,17 @@ $router->get('/api/portal/verify-session', [AuthController::class, 'verifySessio
 $router->get('/api/apps', [AppController::class, 'index']);
 $router->get('/api/portal/apps', [AppController::class, 'index']);
 
+// List globally deleted applications
+$router->get('/api/portal/deleted-apps', [AppController::class, 'getDeletedApps']);
+$router->get('/api/deleted-apps', [AppController::class, 'getDeletedApps']);
+
+// Reset deleted applications
+$router->post('/api/portal/deleted-apps/reset', [AppController::class, 'resetDeletedApps']);
+$router->post('/api/deleted-apps/reset', [AppController::class, 'resetDeletedApps']);
+
 // Add new custom application
-$router->post('/api/apps', [AppController::class, 'store'], [AuthMiddleware::class]);
-$router->post('/api/portal/apps', [AppController::class, 'store'], [AuthMiddleware::class]);
+$router->post('/api/apps', [AppController::class, 'store']);
+$router->post('/api/portal/apps', [AppController::class, 'store']);
 
 // Toggle Favorite Pin
 $router->post('/api/apps/:id/favorite', [AppController::class, 'toggleFavorite']);
@@ -81,11 +89,15 @@ $router->post('/api/apps/{id}/launch', [AppController::class, 'launch']);
 $router->post('/api/portal/apps/:id/launch', [AppController::class, 'launch']);
 $router->post('/api/portal/apps/{id}/launch', [AppController::class, 'launch']);
 
-// Delete custom application
-$router->delete('/api/apps/:id', [AppController::class, 'delete'], [AuthMiddleware::class]);
-$router->delete('/api/apps/{id}', [AppController::class, 'delete'], [AuthMiddleware::class]);
-$router->delete('/api/portal/apps/:id', [AppController::class, 'delete'], [AuthMiddleware::class]);
-$router->delete('/api/portal/apps/{id}', [AppController::class, 'delete'], [AuthMiddleware::class]);
+// Delete application (supports DELETE and POST .../delete)
+$router->delete('/api/apps/:id', [AppController::class, 'delete']);
+$router->delete('/api/apps/{id}', [AppController::class, 'delete']);
+$router->post('/api/apps/:id/delete', [AppController::class, 'delete']);
+$router->post('/api/apps/{id}/delete', [AppController::class, 'delete']);
+$router->delete('/api/portal/apps/:id', [AppController::class, 'delete']);
+$router->delete('/api/portal/apps/{id}', [AppController::class, 'delete']);
+$router->post('/api/portal/apps/:id/delete', [AppController::class, 'delete']);
+$router->post('/api/portal/apps/{id}/delete', [AppController::class, 'delete']);
 
 // ==========================================
 // 4. ACTIVITY LOGS & AUDIT

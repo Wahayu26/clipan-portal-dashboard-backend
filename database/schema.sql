@@ -80,3 +80,13 @@ CREATE TABLE IF NOT EXISTS `portal_audit_logs` (
     INDEX `idx_action` (`action`),
     INDEX `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 5. Table Deleted Apps Tracking (for cross-user deletion synchronization)
+CREATE TABLE IF NOT EXISTS `portal_deleted_apps` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `app_id` VARCHAR(64) NOT NULL UNIQUE,
+    `deleted_by` VARCHAR(64) NULL,
+    `deleted_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_deleted_app_id` (`app_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

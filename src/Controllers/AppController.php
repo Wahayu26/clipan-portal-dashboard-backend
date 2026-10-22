@@ -161,18 +161,101 @@ final class AppController
         ]);
     }
 
+    public function getDeletedApps(): void
+    {
+        $pdo = Database::getConnection();
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS `portal_deleted_apps` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `app_id` VARCHAR(64) NOT NULL UNIQUE,
+                    `deleted_by` VARCHAR(64) NULL,
+                    `deleted_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX `idx_deleted_app_id` (`app_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+            $stmt = $pdo->query("SELECT app_id FROM portal_deleted_apps");
+            $rows = $stmt->fetchAll(PDO::FETCH_COLUMN) ?: [];
+
+            Router::json([
+                'success' => true,
+                'deleted_app_ids' => $rows,
+                'count' => count($rows),
+            ]);
+        } catch (\Throwable $e) {
+            Router::json([
+                'success' => false,
+                'deleted_app_ids' => [],
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    public function resetDeletedApps(): void
+    {
+        $pdo = Database::getConnection();
+        try {
+            $pdo->exec("TRUNCATE TABLE portal_deleted_apps");
+            Router::json([
+                'success' => true,
+                'message' => 'Daftar aplikasi terhapus berhasil di-reset.',
+            ]);
+        } catch (\Throwable $e) {
+            Router::json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function delete(array $data, array $params): void
     {
-        $appId = $params['id'] ?? $data['id'] ?? '';
+        $appId = trim((string)($params['id'] ?? $data['id'] ?? $data['app_id'] ?? ''));
+        if ($appId === '') {
+            Router::json(['error' => true, 'message' => 'ID aplikasi tidak diberikan.'], 400);
+            return;
+        }
+
         $pdo = Database::getConnection();
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS `portal_deleted_apps` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `app_id` VARCHAR(64) NOT NULL UNIQUE,
+                    `deleted_by` VARCHAR(64) NULL,
+                    `deleted_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX `idx_deleted_app_id` (`app_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
 
-        $stmt = $pdo->prepare("DELETE FROM portal_apps WHERE app_id = :id AND is_custom = 1");
-        $stmt->execute(['id' => $appId]);
+            $user = AuthMiddleware::user();
+            $deletedBy = $user ? $user['username'] : (string)($data['username'] ?? 'portal_user');
 
-        if ($stmt->rowCount() > 0) {
-            Router::json(['success' => true, 'message' => 'Aplikasi kustom berhasil dihapus.']);
-        } else {
-            Router::json(['error' => true, 'message' => 'Aplikasi bawaan sistem tidak dapat dihapus.'], 403);
+            // 1. Simpan ke portal_deleted_apps agar tersinkronisasi ke seluruh user lain
+            $stmtDel = $pdo->prepare("
+                INSERT INTO portal_deleted_apps (app_id, deleted_by, deleted_at)
+                VALUES (:app_id, :deleted_by, CURRENT_TIMESTAMP)
+                ON DUPLICATE KEY UPDATE deleted_at = CURRENT_TIMESTAMP
+            ");
+            $stmtDel->execute([
+                ':app_id' => $appId,
+                ':deleted_by' => $deletedBy,
+            ]);
+
+            // 2. Hapus row di portal_apps jika ada
+            $stmt = $pdo->prepare("DELETE FROM portal_apps WHERE app_id = :id");
+            $stmt->execute([':id' => $appId]);
+
+            Router::json([
+                'success' => true,
+                'message' => "Aplikasi '{$appId}' berhasil dihapus untuk semua user.",
+                'app_id' => $appId,
+            ]);
+        } catch (\Throwable $e) {
+            Router::json([
+                'error' => true,
+                'message' => 'Gagal menghapus aplikasi: ' . $e->getMessage(),
+            ], 500);
         }
     }
 }
